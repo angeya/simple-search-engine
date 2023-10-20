@@ -1,0 +1,15 @@
+server:
+  port: 8086
+
+spring:
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/search_engine
+    username: root
+    password: root
+
+crawler:
+  base:
+    web-list:
+      - https://www.sogou.com/
+      - https://www.tsinghua.edu.cn/

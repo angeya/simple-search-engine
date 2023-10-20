@@ -4,6 +4,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import top.angeya.config.CrawlerConfig;
+import top.angeya.service.CommonWebDataService;
 import us.codecraft.webmagic.Spider;
 
 import javax.annotation.PostConstruct;

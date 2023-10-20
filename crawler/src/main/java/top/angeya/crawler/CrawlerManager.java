@@ -21,9 +21,12 @@ public class CrawlerManager implements ApplicationRunner{
 
     private final CommonPageProcessor commonPageProcessor;
 
-    public CrawlerManager(CrawlerConfig crawlerConfig, CommonPageProcessor commonPageProcessor) {
+    private final CommonWebDataService webDataService;
+
+    public CrawlerManager(CrawlerConfig crawlerConfig, CommonPageProcessor commonPageProcessor, CommonWebDataService webDataService) {
         this.crawlerConfig = crawlerConfig;
         this.commonPageProcessor = commonPageProcessor;
+        this.webDataService = webDataService;
     }
 
     @Override
@@ -44,5 +47,8 @@ public class CrawlerManager implements ApplicationRunner{
                 .addUrl(webs)
                 .thread(4)
                 .run();
+
+        // 开始搬运数据
+        this.webDataService.startCarryWebData();
     }
 }

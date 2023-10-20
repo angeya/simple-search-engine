@@ -11,8 +11,11 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.selector.Html;
 
+import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @Author: wanganjie 5790
@@ -26,6 +29,13 @@ public class CommonPageProcessor implements PageProcessor {
     @Autowired
     private CommonWebDataService commonWebDataService;
 
+    private Set<String> urlSet;
+
+    @PostConstruct
+    private void init() {
+        urlSet = this.commonWebDataService.getUrlSetFromDb();
+    }
+
     @Override
     public void process(Page page) {
         Html html = page.getHtml();
@@ -36,13 +46,18 @@ public class CommonPageProcessor implements PageProcessor {
 
         // 存在的网页也加入待爬取队列，避免重启后无法继续爬取
         List<String> urlList = page.getHtml().links().all();
-        page.addTargetRequests(urlList);
+        List<String> newUrlList = urlList.stream()
+                .filter(webUrl -> {
+                    if (!urlSet.contains(webUrl)) {
+                        return true;
+                    }
+                    log.warn("网页已经存在: " + webInfo);
+                    return false;
+                }).collect(Collectors.toList());
 
-        // 判断是否存在
-        if (this.commonWebDataService.isWebExist(url)) {
-            log.warn("网页已经存在: " + webInfo);
-            return;
-        }
+        page.addTargetRequests(newUrlList);
+        urlSet.addAll(newUrlList);
+
         log.info(webInfo);
         // 创建网页数据对象
         CommonWebData webData = new CommonWebData();
@@ -52,14 +67,14 @@ public class CommonPageProcessor implements PageProcessor {
         webData.setSmartContent(html.smartContent().get());
         webData.setCreateTime(LocalDateTime.now());
 
-        // 数据入库
-        this.commonWebDataService.saveWebData(webData);
+        // 加入数据队列
+        this.commonWebDataService.addWebDataToQueue(webData);
     }
 
     @Override
     public Site getSite() {
         // 设置重试次数
-        return Site.me().setRetryTimes(2).setSleepTime(1000);
+        return Site.me().setRetryTimes(3).setSleepTime(1000);
     }
 
 }

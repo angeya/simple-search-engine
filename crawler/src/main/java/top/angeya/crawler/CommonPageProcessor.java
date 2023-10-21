@@ -2,6 +2,7 @@ package top.angeya.crawler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import top.angeya.entity.CommonWebData;
@@ -26,11 +27,20 @@ import java.util.stream.Collectors;
 @Component
 public class CommonPageProcessor implements PageProcessor {
 
+    /**
+     * 网页数据服务
+     */
     @Autowired
     private CommonWebDataService commonWebDataService;
 
+    /**
+     * 网页URL集合，避免重复爬取
+     */
     private Set<String> urlSet;
 
+    /**
+     * 初始化工作
+     */
     @PostConstruct
     private void init() {
         urlSet = this.commonWebDataService.getUrlSetFromDb();
@@ -40,7 +50,8 @@ public class CommonPageProcessor implements PageProcessor {
     public void process(Page page) {
         Html html = page.getHtml();
         Document document = html.getDocument();
-        String title = document.getElementsByTag("title").get(0).text();
+        Elements elements = document.getElementsByTag("title");
+        String title = elements.isEmpty() ? "" : elements.get(0).text();
         String url = page.getUrl().get();
         String webInfo = title + "--------------" + url + "\n";
 
@@ -51,7 +62,7 @@ public class CommonPageProcessor implements PageProcessor {
                     if (!urlSet.contains(webUrl)) {
                         return true;
                     }
-                    log.warn("网页已经存在: " + webInfo);
+                    log.warn("web is exists: " + webInfo);
                     return false;
                 }).collect(Collectors.toList());
 

@@ -24,6 +24,9 @@ import java.util.stream.Collectors;
 @Service
 public class CommonWebDataService extends ServiceImpl<CommonWebDataMapper, CommonWebData> {
 
+    /**
+     * 数据队列
+     */
     private final BlockingQueue<CommonWebData> webDataQueue = new LinkedBlockingDeque<>(1024);
 
     /**

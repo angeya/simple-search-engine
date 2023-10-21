@@ -3,14 +3,13 @@ package top.angeya.service;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import top.angeya.dao.CommonWebDataMapper;
 import top.angeya.entity.CommonWebData;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.stream.Collectors;
@@ -32,6 +31,7 @@ public class CommonWebDataService extends ServiceImpl<CommonWebDataMapper, Commo
     /**
      * 搬运数据
      */
+    @Async
     public void startCarryWebData() {
         while(true) {
             try {
@@ -39,8 +39,9 @@ public class CommonWebDataService extends ServiceImpl<CommonWebDataMapper, Commo
                 log.info("web data queue size is {}", queueSize);
                 CommonWebData webData = webDataQueue.take();
                 this.saveWebData(webData);
+                log.info("save web: {} successfully", webData.getTitle());
             } catch (InterruptedException e) {
-                log.error("get web data and save error", e);
+                log.error("take web data and save error", e);
             }
         }
     }

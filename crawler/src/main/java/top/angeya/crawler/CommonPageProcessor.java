@@ -43,7 +43,7 @@ public class CommonPageProcessor implements PageProcessor {
      */
     @PostConstruct
     private void init() {
-        urlSet = this.commonWebDataService.getUrlSetFromDb();
+        this.urlSet = this.commonWebDataService.getUrlSetFromDb();
     }
 
     @Override

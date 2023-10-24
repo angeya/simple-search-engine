@@ -16,6 +16,7 @@ import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 /**
@@ -34,16 +35,22 @@ public class CommonPageProcessor implements PageProcessor {
     private CommonWebDataService commonWebDataService;
 
     /**
-     * 网页URL集合，避免重复爬取
+     * 已完成de网页URL集合，避免重复爬取
      */
-    private Set<String> urlSet;
+    private Set<String> finishedUrlSet;
+
+    /**
+     * 未完成de网页URL集合
+     */
+    private Set<String> unFinishedUrlSet = new CopyOnWriteArraySet<>();
 
     /**
      * 初始化工作
      */
     @PostConstruct
     private void init() {
-        this.urlSet = this.commonWebDataService.getUrlSetFromDb();
+        // 使用线程安全的set
+        this.finishedUrlSet = new CopyOnWriteArraySet<>(this.commonWebDataService.getUrlSetFromDb());
     }
 
     @Override
@@ -53,13 +60,13 @@ public class CommonPageProcessor implements PageProcessor {
         Elements elements = document.getElementsByTag("title");
         String title = elements.isEmpty() ? "" : elements.get(0).text();
         String url = page.getUrl().get();
-        String webInfo = title + "--------------" + url + "\n";
+        String webInfo = title + "-------" + url + "\n";
 
         // 存在的网页也加入待爬取队列，避免重启后无法继续爬取
         List<String> urlList = page.getHtml().links().all();
         List<String> newUrlList = urlList.stream()
                 .filter(webUrl -> {
-                    if (!urlSet.contains(webUrl)) {
+                    if (!finishedUrlSet.contains(webUrl)) {
                         return true;
                     }
                     log.warn("web is exists: " + webInfo);
@@ -67,9 +74,9 @@ public class CommonPageProcessor implements PageProcessor {
                 }).collect(Collectors.toList());
 
         page.addTargetRequests(newUrlList);
-        urlSet.addAll(newUrlList);
+        this.unFinishedUrlSet.addAll(newUrlList);
 
-        log.info(webInfo);
+        log.info("dealing {}, there are {} page has not deal", webInfo, this.unFinishedUrlSet.size());
         // 创建网页数据对象
         CommonWebData webData = new CommonWebData();
         webData.setTitle(title);
@@ -80,12 +87,25 @@ public class CommonPageProcessor implements PageProcessor {
 
         // 加入数据队列
         this.commonWebDataService.addWebDataToQueue(webData);
+        this.finishedUrlSet.add(url);
+
+        this.afterOnePageFinished(page);
     }
 
     @Override
     public Site getSite() {
         // 设置重试次数
         return Site.me().setRetryTimes(3).setSleepTime(1000);
+    }
+
+    /**
+     * 当一个网页处理完成
+     * @param page 网页
+     */
+    private void afterOnePageFinished(Page page) {
+        String url = page.getUrl().get();
+        this.unFinishedUrlSet.remove(url);
+        this.finishedUrlSet.add(url);
     }
 
 }

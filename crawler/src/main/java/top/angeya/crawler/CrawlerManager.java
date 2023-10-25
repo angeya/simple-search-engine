@@ -48,9 +48,10 @@ public class CrawlerManager implements ApplicationRunner{
         CommonThreadPool.EXECUTOR_SERVICE.submit(this.webDataService::startCarryWebData);
 
         // 通过new的CommonPageProcessor方式，无法获取里面以来的Bean
+        int threadCount = crawlerConfig.getThreadCount();
         Spider.create(this.commonPageProcessor)
                 .addUrl(webs)
-                .thread(12)
+                .thread(threadCount)
                 .run();
     }
 }

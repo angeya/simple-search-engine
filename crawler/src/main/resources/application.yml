@@ -10,6 +10,7 @@ spring:
 
 crawler:
   base:
+    thread-count: 3
     web-list:
       - https://www.sogou.com/
       - https://www.tsinghua.edu.cn/

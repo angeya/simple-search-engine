@@ -15,6 +15,12 @@ import java.util.List;
 @Configuration
 @Data
 public class CrawlerConfig {
+
+    /**
+     * 线程数量
+     */
+    private Integer threadCount;
+
     /**
      * 基础页面列表
      */

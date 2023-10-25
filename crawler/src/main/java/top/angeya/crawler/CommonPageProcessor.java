@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import top.angeya.entity.CommonWebData;
 import top.angeya.service.CommonWebDataService;
+import top.angeya.util.Tools;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.processor.PageProcessor;
@@ -42,7 +43,7 @@ public class CommonPageProcessor implements PageProcessor {
     /**
      * 未完成de网页URL集合
      */
-    private Set<String> unFinishedUrlSet = new CopyOnWriteArraySet<>();
+    private final Set<String> unFinishedUrlSet = new CopyOnWriteArraySet<>();
 
     /**
      * 初始化工作
@@ -66,11 +67,16 @@ public class CommonPageProcessor implements PageProcessor {
         List<String> urlList = page.getHtml().links().all();
         List<String> newUrlList = urlList.stream()
                 .filter(webUrl -> {
-                    if (!finishedUrlSet.contains(webUrl)) {
-                        return true;
+                    if (finishedUrlSet.contains(webUrl)) {
+                        log.warn("web is exists: " + webInfo);
+                        return false;
                     }
-                    log.warn("web is exists: " + webInfo);
-                    return false;
+                    if (Tools.isUrlValid(webUrl)) {
+                        return true;
+                    } else {
+                        log.warn("web url {} is invalid", webUrl);
+                        return false;
+                    }
                 }).collect(Collectors.toList());
 
         page.addTargetRequests(newUrlList);

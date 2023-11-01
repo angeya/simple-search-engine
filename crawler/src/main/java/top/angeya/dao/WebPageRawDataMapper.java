@@ -2,7 +2,7 @@ package top.angeya.dao;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.springframework.stereotype.Repository;
-import top.angeya.entity.WebPageInfo;
+import top.angeya.entity.WebPageRawData;
 
 /**
  * @Author: wanganjie 5790
@@ -10,6 +10,6 @@ import top.angeya.entity.WebPageInfo;
  * @Description:
  */
 @Repository
-public interface WebPageInfoMapper extends BaseMapper<WebPageInfo> {
+public interface WebPageRawDataMapper extends BaseMapper<WebPageRawData> {
 
 }

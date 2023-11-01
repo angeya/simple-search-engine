@@ -7,6 +7,7 @@ import top.angeya.config.CrawlerConfig;
 import top.angeya.service.CommonWebDataService;
 import top.angeya.threads.CommonThreadPool;
 import us.codecraft.webmagic.Spider;
+import us.codecraft.webmagic.pipeline.Pipeline;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
@@ -17,17 +18,21 @@ import java.util.List;
  * @Description:
  */
 @Component
-public class CrawlerManager implements ApplicationRunner{
+public class CrawlerManager implements ApplicationRunner {
     private final CrawlerConfig crawlerConfig;
 
     private final CommonPageProcessor commonPageProcessor;
 
     private final CommonWebDataService webDataService;
 
-    public CrawlerManager(CrawlerConfig crawlerConfig, CommonPageProcessor commonPageProcessor, CommonWebDataService webDataService) {
+    private final WebPageSavingPipeline webPageSavingPipeline;
+
+    public CrawlerManager(CrawlerConfig crawlerConfig, CommonPageProcessor commonPageProcessor,
+                          CommonWebDataService webDataService, WebPageSavingPipeline webPageSavingPipeline) {
         this.crawlerConfig = crawlerConfig;
         this.commonPageProcessor = commonPageProcessor;
         this.webDataService = webDataService;
+        this.webPageSavingPipeline = webPageSavingPipeline;
     }
 
     @Override
@@ -51,6 +56,7 @@ public class CrawlerManager implements ApplicationRunner{
         int threadCount = crawlerConfig.getThreadCount();
         Spider.create(this.commonPageProcessor)
                 .addUrl(webs)
+                .addPipeline((Pipeline) webPageSavingPipeline)
                 .thread(threadCount)
                 .run();
     }

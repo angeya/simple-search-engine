@@ -6,12 +6,13 @@ import java.time.LocalDateTime;
 
 /**
  * 网页原始数据
+ *
  * @Author: wanganjie 5790
  * @Date: 2023/11/1 20:31
  * @Description:
  */
 @Data
-public class WebPageRowData {
+public class WebPageRawData {
 
     /**
      * 主键

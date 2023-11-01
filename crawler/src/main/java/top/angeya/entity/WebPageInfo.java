@@ -1,11 +1,13 @@
 package top.angeya.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
 /**
  * 网页基本信息
+ *
  * @Author: wanganjie 5790
  * @Date: 2023/11/1 20:31
  * @Description:
@@ -28,10 +30,17 @@ public class WebPageInfo {
      */
     private String url;
 
+
     /**
      * 智能文本内容
      */
     private String smartContent;
+
+    /**
+     * 网页原始内容
+     */
+    @TableField(exist = false)
+    private String rawContent;
 
     /**
      * 创建时间

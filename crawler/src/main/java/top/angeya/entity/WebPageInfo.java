@@ -29,11 +29,6 @@ public class WebPageInfo {
     private String url;
 
     /**
-     * 网页内容
-     */
-    private String webContent;
-
-    /**
      * 智能文本内容
      */
     private String smartContent;

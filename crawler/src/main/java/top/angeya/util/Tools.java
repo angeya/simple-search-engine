@@ -12,14 +12,15 @@ import java.util.regex.Pattern;
 public class Tools {
 
     /**
-     * URL匹配模板
-     */
-    private static final Pattern WEB_URL_PATTERN = Pattern.compile(CommonConstant.WEB_URL_REG);
-
-    /**
      * 私有构造器
      */
     private Tools(){}
+
+
+    /**
+     * URL匹配模板
+     */
+    private static final Pattern WEB_URL_PATTERN = Pattern.compile(CommonConstant.WEB_URL_REG);
 
     /**
      * 判断url是否正确

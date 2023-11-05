@@ -11,9 +11,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication
 @MapperScan("top.angeya.dao")
-public class App {
+public class CrawlerApp {
     public static void main(String[] args) {
-        SpringApplication.run(App.class, args);
+        SpringApplication.run(CrawlerApp.class, args);
         System.out.println("项目启动成功");
     }
 }

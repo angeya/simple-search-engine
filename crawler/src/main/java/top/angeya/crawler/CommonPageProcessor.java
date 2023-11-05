@@ -5,8 +5,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import top.angeya.entity.CommonWebData;
-import top.angeya.service.CommonWebDataService;
+import top.angeya.service.WebPageInfoService;
 import top.angeya.util.Tools;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
@@ -14,7 +13,6 @@ import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.selector.Html;
 
 import javax.annotation.PostConstruct;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -33,7 +31,7 @@ public class CommonPageProcessor implements PageProcessor {
      * 网页数据服务
      */
     @Autowired
-    private CommonWebDataService commonWebDataService;
+    private WebPageInfoService webPageInfoService;
 
     /**
      * 已完成de网页URL集合，避免重复爬取
@@ -51,7 +49,7 @@ public class CommonPageProcessor implements PageProcessor {
     @PostConstruct
     private void init() {
         // 使用线程安全的set
-        this.finishedUrlSet = new CopyOnWriteArraySet<>(this.commonWebDataService.getUrlSetFromDb());
+        this.finishedUrlSet = new CopyOnWriteArraySet<>(this.webPageInfoService.getUrlSetFromDb());
     }
 
     @Override
@@ -83,16 +81,14 @@ public class CommonPageProcessor implements PageProcessor {
         this.unFinishedUrlSet.addAll(newUrlList);
 
         log.info("dealing {}, there are {} page has not deal", webInfo, this.unFinishedUrlSet.size());
-        // 创建网页数据对象
-        CommonWebData webData = new CommonWebData();
-        webData.setTitle(title);
-        webData.setUrl(url);
-        webData.setWebContent(html.get());
-        webData.setSmartContent(html.smartContent().get());
-        webData.setCreateTime(LocalDateTime.now());
+        // 设置网页数据
+        page.putField("title", title);
+        page.putField("url", url);
+        page.putField("smartContent", html.smartContent().get());
+        page.putField("rawContent", html.get());
 
         // 加入数据队列
-        this.commonWebDataService.addWebDataToQueue(webData);
+        //this.commonWebDataService.addWebDataToQueue(webData);
         this.finishedUrlSet.add(url);
 
         this.afterOnePageFinished(page);
@@ -106,6 +102,7 @@ public class CommonPageProcessor implements PageProcessor {
 
     /**
      * 当一个网页处理完成
+     *
      * @param page 网页
      */
     private void afterOnePageFinished(Page page) {

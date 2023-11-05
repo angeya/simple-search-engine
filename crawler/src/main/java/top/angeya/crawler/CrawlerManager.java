@@ -4,10 +4,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import top.angeya.config.CrawlerConfig;
-import top.angeya.service.CommonWebDataService;
-import top.angeya.threads.CommonThreadPool;
+import top.angeya.service.WebPageInfoService;
 import us.codecraft.webmagic.Spider;
-import us.codecraft.webmagic.pipeline.Pipeline;
 
 import javax.annotation.PostConstruct;
 import java.util.List;
@@ -23,15 +21,15 @@ public class CrawlerManager implements ApplicationRunner {
 
     private final CommonPageProcessor commonPageProcessor;
 
-    private final CommonWebDataService webDataService;
+    private final WebPageInfoService webPageInfoService;
 
     private final WebPageSavingPipeline webPageSavingPipeline;
 
     public CrawlerManager(CrawlerConfig crawlerConfig, CommonPageProcessor commonPageProcessor,
-                          CommonWebDataService webDataService, WebPageSavingPipeline webPageSavingPipeline) {
+                          WebPageInfoService webPageInfoService, WebPageSavingPipeline webPageSavingPipeline) {
         this.crawlerConfig = crawlerConfig;
         this.commonPageProcessor = commonPageProcessor;
-        this.webDataService = webDataService;
+        this.webPageInfoService = webPageInfoService;
         this.webPageSavingPipeline = webPageSavingPipeline;
     }
 
@@ -50,13 +48,13 @@ public class CrawlerManager implements ApplicationRunner {
         webList.toArray(webs);
 
         // 使用新线程开始搬运数据
-        CommonThreadPool.EXECUTOR_SERVICE.submit(this.webDataService::startCarryWebData);
+        //CommonThreadPool.EXECUTOR_SERVICE.submit(this.webDataService::startCarryWebData);
 
         // 通过new的CommonPageProcessor方式，无法获取里面以来的Bean
         int threadCount = crawlerConfig.getThreadCount();
         Spider.create(this.commonPageProcessor)
                 .addUrl(webs)
-                .addPipeline((Pipeline) webPageSavingPipeline)
+                .addPipeline(webPageSavingPipeline)
                 .thread(threadCount)
                 .run();
     }

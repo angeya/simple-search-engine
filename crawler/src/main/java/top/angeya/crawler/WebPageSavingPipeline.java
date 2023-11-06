@@ -4,8 +4,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import top.angeya.constant.CommonConstant;
+import top.angeya.entity.FileUrl;
 import top.angeya.entity.WebPageInfo;
 import top.angeya.entity.WebPageRawData;
+import top.angeya.service.FileUrlService;
 import top.angeya.service.WebPageInfoService;
 import top.angeya.service.WebPageRawDataService;
 import us.codecraft.webmagic.ResultItems;
@@ -16,6 +18,7 @@ import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -40,6 +43,11 @@ public class WebPageSavingPipeline implements Pipeline {
     private final WebPageRawDataService webPageRawDataService;
 
     /**
+     * 文件地址服务
+     */
+    private final FileUrlService fileUrlService;
+
+    /**
      * 文件后缀
      */
     @Value("${crawler.file-extensions:txt,csv,doc,docx,pdf,odt,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,mp3,wav,mp4,avi,zip}")
@@ -48,7 +56,7 @@ public class WebPageSavingPipeline implements Pipeline {
     /**
      * 文件后缀，用于匹配文件下载的url
      */
-    private Set<String> fileExtensionSet = new HashSet<>();
+    private final Set<String> fileExtensionSet = new HashSet<>();
 
     @PostConstruct
     private void init() {
@@ -57,9 +65,11 @@ public class WebPageSavingPipeline implements Pipeline {
     }
 
 
-    public WebPageSavingPipeline(WebPageInfoService webPageInfoService, WebPageRawDataService webPageRawDataService) {
+    public WebPageSavingPipeline(WebPageInfoService webPageInfoService, WebPageRawDataService webPageRawDataService,
+                                 FileUrlService fileUrlService) {
         this.webPageInfoService = webPageInfoService;
         this.webPageRawDataService = webPageRawDataService;
+        this.fileUrlService = fileUrlService;
     }
 
     @Override
@@ -71,6 +81,18 @@ public class WebPageSavingPipeline implements Pipeline {
         String rawContent = resultItems.get("rawContent");
         // 当前时间
         LocalDateTime now = LocalDateTime.now();
+
+        // 判断url是否为文件地址，如果是则保存到文件地址表
+        Optional<String> fileExtensionOption = this.isFileUrl(url);
+        if (fileExtensionOption.isPresent()) {
+            // 文件地址title一般为空，content一般为乱码
+            FileUrl fileUrl = new FileUrl();
+            fileUrl.setUrl(url);
+            fileUrl.setFileType(fileExtensions);
+            fileUrl.setCreateTime(now);
+            this.fileUrlService.save(fileUrl);
+            return;
+        }
 
         // 网页信息记录入库
         WebPageInfo webPageInfo = new WebPageInfo();
@@ -90,15 +112,19 @@ public class WebPageSavingPipeline implements Pipeline {
 
     /**
      * 判断url是不是文件下载地址
+     *
      * @param url url
      * @return 判断结果
      */
-    private boolean isFileUrl(String url) {
+    private Optional<String> isFileUrl(String url) {
         int extIndex = url.lastIndexOf(".");
         if (extIndex < 0) {
-            return false;
+            return Optional.empty();
         }
         String extension = url.substring(extIndex + 1).toLowerCase();
-        return this.fileExtensionSet.contains(extension);
+        if (this.fileExtensionSet.contains(extension)) {
+            return Optional.of(extension);
+        }
+        return Optional.empty();
     }
 }

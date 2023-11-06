@@ -12,4 +12,9 @@ public class CommonConstant {
      * 网络URL正则表达式
      */
     public static final String WEB_URL_REG = "^((http|https)://)?([a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6})(:[0-9]{1,5})?(/.*)?$";
+
+    /**
+     * 简单分隔符 英文逗号
+     */
+    public static final String SIMPLE_SEPARATOR = ",";
 }

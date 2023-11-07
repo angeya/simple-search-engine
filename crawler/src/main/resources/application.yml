@@ -10,6 +10,7 @@ spring:
 
 crawler:
   file-extensions: 'txt,csv,doc,docx,pdf,odt,xls,xlsx,ppt,pptx,jpg,jpeg,png,gif,bmp,mp3,wav,mp4,avi,zip'
+  url-file-path: /root/myapp/simple-search-engine/data
   base:
     thread-count: 3
     web-list:

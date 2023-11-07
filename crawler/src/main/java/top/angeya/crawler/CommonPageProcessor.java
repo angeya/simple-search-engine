@@ -72,7 +72,7 @@ public class CommonPageProcessor implements PageProcessor {
                     if (Tools.isUrlValid(webUrl)) {
                         return true;
                     } else {
-                        log.warn("web url {} is invalid", webUrl);
+                        log.warn("web url [{}] is invalid", webUrl);
                         return false;
                     }
                 }).collect(Collectors.toList());
@@ -86,10 +86,6 @@ public class CommonPageProcessor implements PageProcessor {
         page.putField("url", url);
         page.putField("smartContent", html.smartContent().get());
         page.putField("rawContent", html.get());
-
-        // 加入数据队列
-        //this.commonWebDataService.addWebDataToQueue(webData);
-        this.finishedUrlSet.add(url);
 
         this.afterOnePageFinished(page);
     }

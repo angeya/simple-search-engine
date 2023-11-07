@@ -60,8 +60,10 @@ public class WebPageSavingPipeline implements Pipeline {
 
     @PostConstruct
     private void init() {
+        // 初始化文件后缀
         String[] extensions = this.fileExtensions.split(CommonConstant.SIMPLE_SEPARATOR);
         this.fileExtensionSet.addAll(Arrays.asList(extensions));
+        log.info("file extensions are: {}", fileExtensionSet);
     }
 
 
@@ -123,6 +125,7 @@ public class WebPageSavingPipeline implements Pipeline {
         }
         String extension = url.substring(extIndex + 1).toLowerCase();
         if (this.fileExtensionSet.contains(extension)) {
+            log.info("{} is a file url, file type is: {}", url, extension);
             return Optional.of(extension);
         }
         return Optional.empty();

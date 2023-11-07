@@ -1,5 +1,6 @@
 package top.angeya.crawler;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import top.angeya.config.CrawlerConfig;
 import us.codecraft.webmagic.Spider;
@@ -19,6 +20,9 @@ public class CrawlerManager {
     private final CommonPageProcessor commonPageProcessor;
 
     private final WebPageSavingPipeline webPageSavingPipeline;
+
+    @Value("${crawler.url-file-path}")
+    private String urlCacheFilePath;
 
     public CrawlerManager(CrawlerConfig crawlerConfig, CommonPageProcessor commonPageProcessor,
                           WebPageSavingPipeline webPageSavingPipeline) {
@@ -40,6 +44,7 @@ public class CrawlerManager {
         int threadCount = crawlerConfig.getThreadCount();
         Spider.create(this.commonPageProcessor)
                 .addUrl(webs)
+                //.setScheduler(new FileCacheQueueScheduler(urlCacheFilePath))
                 .addPipeline(webPageSavingPipeline)
                 .thread(threadCount)
                 .run();

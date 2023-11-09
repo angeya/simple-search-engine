@@ -11,6 +11,7 @@ import us.codecraft.webmagic.scheduler.RedisScheduler;
 import us.codecraft.webmagic.scheduler.Scheduler;
 
 import javax.annotation.Resource;
+import java.time.Duration;
 
 /**
  * 调度器管理器
@@ -38,15 +39,31 @@ public class SchedulerManager {
      * @return 调度器
      */
     public Scheduler getSchedule() {
+        // 根据配置创建不同的调度器
         if (UrlQueueStorageType.MYSQL.getCode().equals(this.urlQueueStorageType)) {
             return new MysqlScheduler();
         } else if (UrlQueueStorageType.REDIS.getCode().equals(this.urlQueueStorageType)) {
-            JedisPool jedisPool = new JedisPool(new GenericObjectPoolConfig<>(), redisProperties.getHost(),
-                    redisProperties.getPort(), (int) redisProperties.getTimeout().getSeconds(),
-                    redisProperties.getPassword());
-            return new RedisScheduler(jedisPool);
+            return this.getRedisScheduler();
         }
         return new FileCacheQueueScheduler(this.urlCacheFilePath);
+    }
+
+    /**
+     * 获取redis调度器
+     *
+     * @return redis调度器
+     */
+    private Scheduler getRedisScheduler() {
+        // 默认redis超时
+        int timeout = 10000;
+        Duration timeoutDuration = redisProperties.getTimeout();
+        if (timeoutDuration != null) {
+            timeout = (int) timeoutDuration.getSeconds();
+        }
+        // 创建redis连接池
+        JedisPool jedisPool = new JedisPool(new GenericObjectPoolConfig<>(), redisProperties.getHost(),
+                redisProperties.getPort(), timeout, redisProperties.getPassword());
+        return new RedisScheduler(jedisPool);
     }
 
 }

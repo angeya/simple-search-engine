@@ -1,4 +1,4 @@
-package top.angeya.crawler;
+package top.angeya.crawler.scheduler;
 
 import us.codecraft.webmagic.Request;
 import us.codecraft.webmagic.Task;

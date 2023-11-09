@@ -9,7 +9,7 @@ import us.codecraft.webmagic.scheduler.DuplicateRemovedScheduler;
  * @date: 2023/11/7 23:32
  * @description:
  */
-public class DbScheduler extends DuplicateRemovedScheduler {
+public class MysqlScheduler extends DuplicateRemovedScheduler {
 
     @Override
     public Request poll(Task task) {

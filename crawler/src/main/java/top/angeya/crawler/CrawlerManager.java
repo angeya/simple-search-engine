@@ -1,11 +1,12 @@
 package top.angeya.crawler;
 
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import top.angeya.config.CrawlerConfig;
 import top.angeya.crawler.scheduler.SchedulerManager;
 import us.codecraft.webmagic.Spider;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ import java.util.List;
  * @Description:
  */
 @Component
-public class CrawlerManager {
+public class CrawlerManager implements ApplicationRunner {
     private final CrawlerConfig crawlerConfig;
 
     private final CommonPageProcessor commonPageProcessor;
@@ -34,9 +35,17 @@ public class CrawlerManager {
     }
 
     /**
+     * 项目启动完成后开始
+     * 如果在PostConstruct中执行会导致有些Component还没有加载
+     */
+    @Override
+    public void run(ApplicationArguments args) {
+        this.startCrawl();
+    }
+
+    /**
      * 开始抓取
      */
-    @PostConstruct
     private void startCrawl() {
         List<String> webList = crawlerConfig.getWebList();
         String[] webs = new String[webList.size()];

@@ -32,6 +32,9 @@ public class SchedulerManager {
     @Resource
     private RedisProperties redisProperties;
 
+    //@Resource
+    //private UrlService urlService;
+
 
     /**
      * 获取调度器 默认使用文件调度器

@@ -61,14 +61,10 @@ public class CommonPageProcessor implements PageProcessor {
         String url = page.getUrl().get();
         String webInfo = title + "-------" + url + "\n";
 
-        // 存在的网页也加入待爬取队列，避免重启后无法继续爬取
-        List<String> urlList = page.getHtml().links().all();
-        List<String> newUrlList = urlList.stream()
+        // 获取所有链接
+        List<String> allUurlList = page.getHtml().links().all();
+        List<String> valideUrlList = allUurlList.stream()
                 .filter(webUrl -> {
-                    if (finishedUrlSet.contains(webUrl)) {
-                        log.warn("web is exists: " + webInfo);
-                        return false;
-                    }
                     if (Tools.isUrlValid(webUrl)) {
                         return true;
                     } else {
@@ -77,10 +73,10 @@ public class CommonPageProcessor implements PageProcessor {
                     }
                 }).collect(Collectors.toList());
 
-        page.addTargetRequests(newUrlList);
-        this.unFinishedUrlSet.addAll(newUrlList);
+        page.addTargetRequests(valideUrlList);
+        this.unFinishedUrlSet.addAll(valideUrlList);
 
-        log.info("dealing {}, there are {} page has not deal", webInfo, this.unFinishedUrlSet.size());
+        log.info("process {}, there are {} page has not deal", webInfo, this.unFinishedUrlSet.size());
         // 设置网页数据
         page.putField("title", title);
         page.putField("url", url);

@@ -13,8 +13,11 @@ import us.codecraft.webmagic.Task;
 import us.codecraft.webmagic.scheduler.DuplicateRemovedScheduler;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 /**
  * @author: angeya
@@ -30,6 +33,11 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
     private final BlockingQueue<Url> urlQueue = new LinkedBlockingQueue<>();
 
     /**
+     * 已完成de网页URL集合，避免重复爬取
+     */
+    private final Set<String> uniqueUrlSet = new CopyOnWriteArraySet<>();
+
+    /**
      * url数据库映射
      */
     private final UrlMapper urlMapper;
@@ -42,7 +50,7 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
     /**
      * 爬虫数据记录
      */
-    private CrawlerDataRecord crawlerDataRecord;
+    private final CrawlerDataRecord crawlerDataRecord = new CrawlerDataRecord(CrawlerDataRecordType.URL_QUEUE_INDEX);
 
     public MysqlScheduler() {
         this.urlMapper = BeanUtil.getBean(UrlMapper.class);
@@ -58,13 +66,22 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
             log.error("url or its property is null, {}", url);
             return null;
         }
-        this.urlQueue.
+        // 同步更新数据库记录
+        synchronized (this.crawlerDataRecord) {
+            this.crawlerDataRecord.setValue(url.getId());
+            this.crawlerDataRecordMapper.updateById(this.crawlerDataRecord);
+        }
         return new Request(url.getText());
     }
 
     @Override
     public void push(Request request, Task task) {
         String urlText = request.getUrl();
+        if (this.uniqueUrlSet.contains(urlText)) {
+            log.info("url [{}] is duplicate", urlText);
+            return;
+        }
+        this.uniqueUrlSet.add(urlText);
         // url信息入库
         Url url = new Url(urlText);
         boolean toDbSuccess = false;
@@ -84,15 +101,29 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
      */
     private void init() {
         // 获取url的爬取记录
-        this.crawlerDataRecord = this.crawlerDataRecordMapper.selectOne(Wrappers.lambdaQuery(CrawlerDataRecord.class)
+        CrawlerDataRecord dbDataRecord = this.crawlerDataRecordMapper.selectOne(Wrappers.lambdaQuery(CrawlerDataRecord.class)
                 .eq(CrawlerDataRecord::getCode, CrawlerDataRecordType.URL_QUEUE_INDEX));
+        if (dbDataRecord == null) {
+            // 如果数据库没有值，则设置初始值为0并保存
+            this.crawlerDataRecord.setValue(0L);
+            this.crawlerDataRecordMapper.insert(this.crawlerDataRecord);
+        } else {
+            this.crawlerDataRecord.setValue(dbDataRecord.getValue());
+        }
+
+        // 获取所有已经爬取过的url 加入set集合去重
+        List<Url> allUrlList = this.urlMapper.selectList(Wrappers.emptyWrapper());
+        this.uniqueUrlSet.addAll(allUrlList.stream()
+                .map(Url::getText)
+                .collect(Collectors.toList()));
+
         // 根据之前的爬取下标，获取待爬取的url数据
         long lastTimeUrlIndex = this.crawlerDataRecord.getValue();
-        List<Url> urlList = this.urlMapper.selectList(Wrappers.lambdaQuery(Url.class)
+        List<Url> unProcceUrlList = this.urlMapper.selectList(Wrappers.lambdaQuery(Url.class)
                 .gt(Url::getId, lastTimeUrlIndex));
-        log.info("------  init the url from DB, size is {} -------", urlList.size());
+        log.info("------  init the url queue from DB, size is {} -------", unProcceUrlList.size());
         // url加入队列
-        urlList.forEach(url -> {
+        unProcceUrlList.forEach(url -> {
             boolean success = this.urlQueue.offer(url);
             if (success) {
                 log.info(url.getText());

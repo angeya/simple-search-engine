@@ -1,6 +1,9 @@
 package top.angeya.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Data;
+
+import java.time.LocalDateTime;
 
 /**
  * 爬虫信息记录
@@ -22,6 +25,7 @@ public class CrawlerDataRecord {
     /**
      * 编码
      */
+    @TableId
     private String code;
 
     /**
@@ -33,5 +37,15 @@ public class CrawlerDataRecord {
      * 文本值
      */
     private String textValue;
+
+    /**
+     * 修改时间
+     */
+    private LocalDateTime modifyTime;
+
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createTime;
 
 }

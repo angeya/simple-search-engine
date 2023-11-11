@@ -3,16 +3,13 @@ package top.angeya.crawler;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import top.angeya.service.WebPageInfoService;
 import top.angeya.util.Tools;
 import us.codecraft.webmagic.Page;
 import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.processor.PageProcessor;
 import us.codecraft.webmagic.selector.Html;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -27,30 +24,6 @@ import java.util.stream.Collectors;
 @Component
 public class CommonPageProcessor implements PageProcessor {
 
-    /**
-     * 网页数据服务
-     */
-    @Autowired
-    private WebPageInfoService webPageInfoService;
-
-    /**
-     * 已完成de网页URL集合，避免重复爬取
-     */
-    private Set<String> finishedUrlSet;
-
-    /**
-     * 未完成de网页URL集合
-     */
-    private final Set<String> unFinishedUrlSet = new CopyOnWriteArraySet<>();
-
-    /**
-     * 初始化工作
-     */
-    @PostConstruct
-    private void init() {
-        // 使用线程安全的set
-        this.finishedUrlSet = new CopyOnWriteArraySet<>(this.webPageInfoService.getUrlSetFromDb());
-    }
 
     @Override
     public void process(Page page) {
@@ -74,9 +47,7 @@ public class CommonPageProcessor implements PageProcessor {
                 }).collect(Collectors.toList());
 
         page.addTargetRequests(valideUrlList);
-        this.unFinishedUrlSet.addAll(valideUrlList);
-
-        log.info("process {}, there are {} page has not deal", webInfo, this.unFinishedUrlSet.size());
+        log.info("processing url: [{}]", url);
         // 设置网页数据
         page.putField("title", title);
         page.putField("url", url);
@@ -100,7 +71,6 @@ public class CommonPageProcessor implements PageProcessor {
     private void afterOnePageFinished(Page page) {
         String url = page.getUrl().get();
         this.unFinishedUrlSet.remove(url);
-        this.finishedUrlSet.add(url);
     }
 
 }

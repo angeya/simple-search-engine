@@ -15,7 +15,7 @@ import us.codecraft.webmagic.scheduler.DuplicateRemovedScheduler;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
@@ -28,6 +28,16 @@ import java.util.stream.Collectors;
 public class MysqlScheduler extends DuplicateRemovedScheduler {
 
     /**
+     * 读锁
+     */
+    private final Object readLock = new Object();
+
+    /**
+     * 写锁
+     */
+    private final Object writeLock = new Object();
+
+    /**
      * url地址队列
      */
     private final BlockingQueue<Url> urlQueue = new LinkedBlockingQueue<>();
@@ -35,7 +45,7 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
     /**
      * 已完成de网页URL集合，避免重复爬取
      */
-    private final Set<String> uniqueUrlSet = new CopyOnWriteArraySet<>();
+    private final Set<String> uniqueUrlSet = new ConcurrentSkipListSet<>();
 
     /**
      * url数据库映射
@@ -61,13 +71,14 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
 
     @Override
     public Request poll(Task task) {
-        Url url = this.urlQueue.poll();
-        if (url == null || url.getText() == null) {
-            log.error("url or its property is null, {}", url);
-            return null;
-        }
+        Url url;
         // 同步更新数据库记录
-        synchronized (this.crawlerDataRecord) {
+        synchronized (this.readLock) {
+            url = this.urlQueue.poll();
+            if (url == null || url.getText() == null) {
+                log.error("url or its property is null, {}", url);
+                return null;
+            }
             this.crawlerDataRecord.setValue(url.getId());
             this.crawlerDataRecordMapper.updateById(this.crawlerDataRecord);
         }
@@ -78,22 +89,22 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
     public void push(Request request, Task task) {
         String urlText = request.getUrl();
         if (this.uniqueUrlSet.contains(urlText)) {
-            log.info("url [{}] is duplicate", urlText);
             return;
         }
         this.uniqueUrlSet.add(urlText);
         // url信息入库
         Url url = new Url(urlText);
-        boolean toDbSuccess = false;
         try {
-            toDbSuccess = this.urlMapper.insert(url) > 0;
+            synchronized (this.writeLock) {
+                this.urlMapper.insert(url);
+                // url加入消息队列
+                this.urlQueue.offer(url);
+            }
         } catch (Exception e) {
-            log.error("insert url:{} error", urlText, e);
+            log.error("push url:{} error", urlText, e);
+            return;
         }
-        if (toDbSuccess) {
-            // url加入消息队列
-            this.urlQueue.offer(url);
-        }
+        log.info("add new url [{}]", urlText);
     }
 
     /**
@@ -111,12 +122,14 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
             this.crawlerDataRecord.setValue(dbDataRecord.getValue());
         }
 
+        long start = System.currentTimeMillis();
+        log.info("start get url set");
         // 获取所有已经爬取过的url 加入set集合去重
         List<Url> allUrlList = this.urlMapper.selectList(Wrappers.emptyWrapper());
         this.uniqueUrlSet.addAll(allUrlList.stream()
                 .map(Url::getText)
                 .collect(Collectors.toList()));
-
+        log.info("get url set complete, size is {} cost {} ms", allUrlList.size(), System.currentTimeMillis() - start);
         // 根据之前的爬取下标，获取待爬取的url数据
         long lastTimeUrlIndex = this.crawlerDataRecord.getValue();
         List<Url> unProcceUrlList = this.urlMapper.selectList(Wrappers.lambdaQuery(Url.class)

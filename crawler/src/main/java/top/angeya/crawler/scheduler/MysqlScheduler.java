@@ -2,6 +2,7 @@ package top.angeya.crawler.scheduler;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import top.angeya.constant.CrawlerDataRecordType;
 import top.angeya.dao.CrawlerDataRecordMapper;
 import top.angeya.dao.UrlMapper;
@@ -62,21 +63,31 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
      */
     private final CrawlerDataRecord crawlerDataRecord = new CrawlerDataRecord(CrawlerDataRecordType.URL_QUEUE_INDEX);
 
+    /**
+     * url队列最大长度，避免读取速度慢，导致数据堆积内存过大
+     */
+    @Value("${crawler.queue.max-size: 1000}")
+    private int maxQueueSize;
+
     public MysqlScheduler() {
         this.urlMapper = BeanUtil.getBean(UrlMapper.class);
         this.crawlerDataRecordMapper = BeanUtil.getBean(CrawlerDataRecordMapper.class);
         this.init();
     }
 
-
     @Override
     public Request poll(Task task) {
-        Url url;
+        Url url = null;
         // 同步更新数据库记录
         synchronized (this.readLock) {
-            url = this.urlQueue.poll();
-            if (url == null || url.getText() == null) {
-                log.error("url or its property is null, {}", url);
+            try {
+                url = this.urlQueue.take();
+            } catch (InterruptedException e) {
+                log.error("get url from queue error", e);
+                return null;
+            }
+            if (url.getText() == null) {
+                log.error("url text is null, {}", url);
                 return null;
             }
             this.crawlerDataRecord.setValue(url.getId());
@@ -87,6 +98,11 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
 
     @Override
     public void push(Request request, Task task) {
+        // 如果url队列元素个数已经大于等于最大限制，则不再加入url
+        if (this.uniqueUrlSet.size() >= this.maxQueueSize) {
+            return;
+        }
+
         String urlText = request.getUrl();
         if (this.uniqueUrlSet.contains(urlText)) {
             return;
@@ -98,13 +114,13 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
             synchronized (this.writeLock) {
                 this.urlMapper.insert(url);
                 // url加入消息队列
-                this.urlQueue.offer(url);
+                this.urlQueue.put(url);
             }
         } catch (Exception e) {
             log.error("push url:{} error", urlText, e);
             return;
         }
-        log.info("add new url [{}]", urlText);
+        log.info("add new url [{}], queue size is {}", urlText, this.urlQueue.size());
     }
 
     /**
@@ -134,7 +150,10 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
         long lastTimeUrlIndex = this.crawlerDataRecord.getValue();
         List<Url> unProcceUrlList = this.urlMapper.selectList(Wrappers.lambdaQuery(Url.class)
                 .gt(Url::getId, lastTimeUrlIndex));
-        log.info("------  init the url queue from DB, size is {} -------", unProcceUrlList.size());
+
+        log.info("------  init the url queue from DB, size is {}, max size is {} -------",
+                unProcceUrlList.size(), this.maxQueueSize);
+        start = System.currentTimeMillis();
         // url加入队列
         unProcceUrlList.forEach(url -> {
             boolean success = this.urlQueue.offer(url);
@@ -142,6 +161,6 @@ public class MysqlScheduler extends DuplicateRemovedScheduler {
                 log.info(url.getText());
             }
         });
-        log.info("------  DB url add to queue finished -------");
+        log.info("------  DB url add to queue finished, cost {} ms -------", System.currentTimeMillis() - start);
     }
 }

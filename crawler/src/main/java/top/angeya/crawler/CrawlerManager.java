@@ -1,5 +1,6 @@
 package top.angeya.crawler;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import java.util.List;
  * @Date: 2023/10/19 20:27
  * @Description:
  */
+@Slf4j
 @Component
 public class CrawlerManager implements ApplicationRunner {
     private final CrawlerConfig crawlerConfig;
@@ -48,6 +50,7 @@ public class CrawlerManager implements ApplicationRunner {
      */
     private void startCrawl() {
         List<String> webList = crawlerConfig.getWebList();
+        log.info("init url list: {}", webList);
         String[] webs = new String[webList.size()];
         webList.toArray(webs);
 

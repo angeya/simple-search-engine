@@ -33,6 +33,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- mysql驱动 -->
         <dependency>
             <groupId>mysql</groupId>
@@ -40,18 +45,10 @@
             <version>8.0.28</version>
         </dependency>
 
-        <!-- 爬虫核心库 -->
+        <!-- 解析html -->
         <dependency>
-            <groupId>us.codecraft</groupId>
-            <artifactId>webmagic-core</artifactId>
-            <version>0.9.0</version>
-        </dependency>
-
-        <!-- 爬虫扩展库 -->
-        <dependency>
-            <groupId>us.codecraft</groupId>
-            <artifactId>webmagic-extension</artifactId>
-            <version>0.9.0</version>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
         </dependency>
              
         <!-- mybatis plus -->

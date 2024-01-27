@@ -2,6 +2,7 @@ package top.angeya.util;
 
 import top.angeya.constant.CommonConstant;
 
+import java.util.Random;
 import java.util.regex.Pattern;
 
 /**
@@ -14,7 +15,8 @@ public class Tools {
     /**
      * 私有构造器
      */
-    private Tools(){}
+    private Tools() {
+    }
 
 
     /**
@@ -24,11 +26,22 @@ public class Tools {
 
     /**
      * 判断url是否正确
+     *
      * @param url 地址
      * @return 是否有效
      */
     public static boolean isUrlValid(String url) {
         return WEB_URL_PATTERN.matcher(url).matches();
+    }
+
+    /**
+     * 请求休眠 随机休眠时间
+     *
+     * @throws InterruptedException 中断异常
+     */
+    public static void requestSleep() throws InterruptedException {
+        Random random = new Random();
+        Thread.sleep(random.nextInt(1000));
     }
 
 }

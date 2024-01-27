@@ -6,7 +6,7 @@ import lombok.Getter;
 /**
  * url队列存储类型
  *
- * @Author: wanganjie 5790
+ * @Author: angeya
  * @Date: 2023/11/9 15:21
  * @Description:
  */

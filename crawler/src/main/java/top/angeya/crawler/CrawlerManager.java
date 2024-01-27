@@ -5,15 +5,15 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import top.angeya.config.CrawlerConfig;
-import top.angeya.crawler.scheduler.SchedulerManager;
-import us.codecraft.webmagic.Spider;
+import top.angeya.crawler.pipeline.SimplePageHandler;
+import top.angeya.crawler.scheduler.MysqlScheduler;
 
 import java.util.List;
 
 /**
  * 爬虫管理器
  *
- * @Author: wanganjie 5790
+ * @Author: angeya
  * @Date: 2023/10/19 20:27
  * @Description:
  */
@@ -22,18 +22,13 @@ import java.util.List;
 public class CrawlerManager implements ApplicationRunner {
     private final CrawlerConfig crawlerConfig;
 
-    private final CommonPageProcessor commonPageProcessor;
+    private final SimplePageHandler simplePageHandler;
 
-    private final WebPageSavingPipeline webPageSavingPipeline;
 
-    private final SchedulerManager schedulerManager;
 
-    public CrawlerManager(CrawlerConfig crawlerConfig, CommonPageProcessor commonPageProcessor,
-                          WebPageSavingPipeline webPageSavingPipeline, SchedulerManager schedulerManager) {
+    public CrawlerManager(CrawlerConfig crawlerConfig, SimplePageHandler simplePageHandler) {
         this.crawlerConfig = crawlerConfig;
-        this.commonPageProcessor = commonPageProcessor;
-        this.webPageSavingPipeline = webPageSavingPipeline;
-        this.schedulerManager = schedulerManager;
+        this.simplePageHandler = simplePageHandler;
     }
 
     /**
@@ -56,12 +51,12 @@ public class CrawlerManager implements ApplicationRunner {
 
         // 通过new的CommonPageProcessor方式，无法获取里面依赖的Bean
         int threadCount = crawlerConfig.getThreadCount();
-        Spider.create(this.commonPageProcessor)
-                .addUrl(webs)
-                .setScheduler(this.schedulerManager.getSchedule())
-                .addPipeline(webPageSavingPipeline)
-                .thread(threadCount)
-                .run();
+        Crawler.create()
+                .addUrlList(webList)
+                .threads(threadCount)
+                .setSchedule(new MysqlScheduler())
+                .addPipeline(simplePageHandler)
+                .start();
     }
 
 

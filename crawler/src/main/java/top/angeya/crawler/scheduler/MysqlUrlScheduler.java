@@ -5,10 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import top.angeya.constant.CrawlerDataRecordType;
 import top.angeya.dao.CrawlerDataRecordMapper;
-import top.angeya.dao.UrlMapper;
+import top.angeya.dao.UrlInfoMapper;
 import top.angeya.dao.WebPageInfoMapper;
 import top.angeya.pojo.entity.CrawlerDataRecord;
-import top.angeya.pojo.entity.Url;
+import top.angeya.pojo.entity.UrlInfo;
 import top.angeya.pojo.entity.WebPageInfo;
 import top.angeya.util.BeanUtil;
 import top.angeya.util.Tools;
@@ -27,12 +27,12 @@ import java.util.stream.Collectors;
  * @description:
  */
 @Slf4j
-public class MysqlScheduler implements UrlScheduler {
+public class MysqlUrlScheduler implements UrlScheduler {
 
     /**
      * url地址队列
      */
-    private final BlockingQueue<Url> urlQueue = new LinkedBlockingQueue<>();
+    private final BlockingQueue<UrlInfo> urlInfoQueue = new LinkedBlockingQueue<>();
 
     /**
      * 已完成de网页URL集合，避免重复爬取
@@ -42,7 +42,7 @@ public class MysqlScheduler implements UrlScheduler {
     /**
      * url数据库映射
      */
-    private final UrlMapper urlMapper;
+    private final UrlInfoMapper urlInfoMapper;
 
     /**
      * 网页信息数据库映射
@@ -65,53 +65,53 @@ public class MysqlScheduler implements UrlScheduler {
     @Value("${crawler.queue.max-size:1000}")
     private final int maxQueueSize = 2000;
 
-    public MysqlScheduler() {
-        this.urlMapper = BeanUtil.getBean(UrlMapper.class);
+    public MysqlUrlScheduler() {
+        this.urlInfoMapper = BeanUtil.getBean(UrlInfoMapper.class);
         this.crawlerDataRecordMapper = BeanUtil.getBean(CrawlerDataRecordMapper.class);
         this.webPageInfoMapper = BeanUtil.getBean(WebPageInfoMapper.class);
         this.init();
     }
 
     @Override
-    public Url pop() {
-        Url url;
+    public UrlInfo pop() {
+        UrlInfo urlInfo;
         try {
-            url = this.urlQueue.take();
+            urlInfo = this.urlInfoQueue.take();
         } catch (InterruptedException e) {
             log.error("get url from queue error", e);
             return null;
         }
-        if (url.getText() == null) {
-            log.error("url text is null, {}", url);
+        if (urlInfo.getUrl() == null) {
+            log.error("url text is null, {}", urlInfo);
             return null;
         }
-        this.crawlerDataRecord.setValue(url.getId());
+        this.crawlerDataRecord.setValue(urlInfo.getId());
         this.crawlerDataRecordMapper.updateById(this.crawlerDataRecord);
-        return url;
+        return urlInfo;
     }
 
     @Override
-    public void push(Url url) {
+    public void push(UrlInfo urlInfo) {
         // 如果url队列元素个数已经大于等于最大限制，则不再加入url
-        if (this.urlQueue.size() >= this.maxQueueSize) {
+        if (this.urlInfoQueue.size() >= this.maxQueueSize) {
             return;
         }
 
-        String urlText = url.getText();
-        if (!Tools.isUrlValid(urlText) || this.uniqueUrlSet.contains(urlText)) {
+        String url = urlInfo.getUrl();
+        if (!Tools.isUrlValid(url) || this.uniqueUrlSet.contains(url)) {
             return;
         }
-        this.uniqueUrlSet.add(urlText);
+        this.uniqueUrlSet.add(url);
         // url信息入库
         try {
-            this.urlMapper.insert(url);
+            this.urlInfoMapper.insert(urlInfo);
             // url加入消息队列
-            this.urlQueue.put(url);
+            this.urlInfoQueue.put(urlInfo);
         } catch (Exception e) {
-            log.error("push url:{} error", urlText, e);
+            log.error("push url:{} error", url, e);
             return;
         }
-        log.info("add new url [{}], queue size is {}", urlText, this.urlQueue.size());
+        log.info("add new url [{}], queue size is {}", url, this.urlInfoQueue.size());
     }
 
     /**
@@ -126,23 +126,23 @@ public class MysqlScheduler implements UrlScheduler {
         Set<String> processedUrlSet = webPageInfoList.stream().map(WebPageInfo::getUrl).collect(Collectors.toSet());
 
         // 获取所有已经爬取过的url 加入set集合去重
-        List<Url> allUrlList = this.urlMapper.selectList(Wrappers.emptyWrapper());
-        this.uniqueUrlSet.addAll(allUrlList.stream()
-                .map(Url::getText)
+        List<UrlInfo> allUrlListInfo = this.urlInfoMapper.selectList(Wrappers.emptyWrapper());
+        this.uniqueUrlSet.addAll(allUrlListInfo.stream()
+                .map(UrlInfo::getUrl)
                 .collect(Collectors.toList()));
-        log.info("get url set complete, size is {} cost {} ms", allUrlList.size(), System.currentTimeMillis() - start);
+        log.info("get url set complete, size is {} cost {} ms", allUrlListInfo.size(), System.currentTimeMillis() - start);
         // 根据之前的爬取下标，获取待爬取的url数据
-        List<Url> unProceseUrlList = this.urlMapper.selectList(Wrappers.lambdaQuery(Url.class)
-                .notIn(Url::getText, processedUrlSet));
+        List<UrlInfo> unProcessedUrlListInfo = this.urlInfoMapper.selectList(Wrappers.lambdaQuery(UrlInfo.class)
+                .notIn(!processedUrlSet.isEmpty(), UrlInfo::getUrl, processedUrlSet));
 
         log.info("------  init the url queue from DB, size is {}, max size is {} -------",
-                unProceseUrlList.size(), this.maxQueueSize);
+                unProcessedUrlListInfo.size(), this.maxQueueSize);
         start = System.currentTimeMillis();
         // url加入队列
-        unProceseUrlList.forEach(url -> {
-            boolean success = this.urlQueue.offer(url);
+        unProcessedUrlListInfo.forEach(url -> {
+            boolean success = this.urlInfoQueue.offer(url);
             if (success) {
-                log.info(url.getText());
+                log.info(url.getUrl());
             }
         });
         log.info("------  DB url add to queue finished, cost {} ms -------", System.currentTimeMillis() - start);

@@ -1,4 +1,4 @@
-package top.angeya.crawler.pipeline;
+package top.angeya.crawler.handler;
 
 import top.angeya.pojo.web.HtmlPage;
 
@@ -7,7 +7,7 @@ import top.angeya.pojo.web.HtmlPage;
  * @Date: 2023/12/28 18:50
  * @Description:
  */
-public interface Pipeline {
+public interface Handler {
 
     /**
      * 处理网页

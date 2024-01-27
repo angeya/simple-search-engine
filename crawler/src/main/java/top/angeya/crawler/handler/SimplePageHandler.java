@@ -1,4 +1,4 @@
-package top.angeya.crawler.pipeline;
+package top.angeya.crawler.handler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,7 +26,7 @@ import java.util.Set;
  */
 @Slf4j
 @Component
-public class SimplePageHandler implements Pipeline {
+public class SimplePageHandler implements Handler {
 
     /**
      * 网页信息服务
@@ -76,7 +76,6 @@ public class SimplePageHandler implements Pipeline {
         String url = htmlPage.getUrl();
         String smartContent = htmlPage.getText();
         String rawContent = htmlPage.getText();
-
 
         LocalDateTime now = LocalDateTime.now();
         // 判断url是否为文件地址，如果是则保存到文件地址表

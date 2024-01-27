@@ -18,6 +18,8 @@ public class Tools {
     private Tools() {
     }
 
+    private static final Random RANDOM = new Random();
+
 
     /**
      * URL匹配模板
@@ -40,8 +42,7 @@ public class Tools {
      * @throws InterruptedException 中断异常
      */
     public static void requestSleep() throws InterruptedException {
-        Random random = new Random();
-        Thread.sleep(random.nextInt(1000));
+        Thread.sleep(RANDOM.nextInt(1000));
     }
 
 }

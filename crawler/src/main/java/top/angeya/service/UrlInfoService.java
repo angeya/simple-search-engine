@@ -2,8 +2,8 @@ package top.angeya.service;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
-import top.angeya.dao.UrlMapper;
-import top.angeya.pojo.entity.Url;
+import top.angeya.dao.UrlInfoMapper;
+import top.angeya.pojo.entity.UrlInfo;
 
 /**
  * @author: angeya
@@ -11,6 +11,6 @@ import top.angeya.pojo.entity.Url;
  * @description:
  */
 @Service
-public class UrlService extends ServiceImpl<UrlMapper, Url> {
+public class UrlInfoService extends ServiceImpl<UrlInfoMapper, UrlInfo> {
 
 }

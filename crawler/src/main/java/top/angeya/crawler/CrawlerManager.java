@@ -5,8 +5,8 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 import top.angeya.config.CrawlerConfig;
-import top.angeya.crawler.pipeline.SimplePageHandler;
-import top.angeya.crawler.scheduler.MysqlScheduler;
+import top.angeya.crawler.handler.SimplePageHandler;
+import top.angeya.crawler.scheduler.MysqlUrlScheduler;
 
 import java.util.List;
 
@@ -23,8 +23,6 @@ public class CrawlerManager implements ApplicationRunner {
     private final CrawlerConfig crawlerConfig;
 
     private final SimplePageHandler simplePageHandler;
-
-
 
     public CrawlerManager(CrawlerConfig crawlerConfig, SimplePageHandler simplePageHandler) {
         this.crawlerConfig = crawlerConfig;
@@ -49,12 +47,9 @@ public class CrawlerManager implements ApplicationRunner {
         String[] webs = new String[webList.size()];
         webList.toArray(webs);
 
-        // 通过new的CommonPageProcessor方式，无法获取里面依赖的Bean
-        int threadCount = crawlerConfig.getThreadCount();
         Crawler.create()
                 .addUrlList(webList)
-                .threads(threadCount)
-                .setSchedule(new MysqlScheduler())
+                .setSchedule(new MysqlUrlScheduler())
                 .addPipeline(simplePageHandler)
                 .start();
     }

@@ -12,13 +12,13 @@ import java.time.LocalDateTime;
  * @description:
  */
 @Data
-public class Url {
+public class UrlInfo {
 
-    public Url() {
+    public UrlInfo() {
     }
 
-    public Url(String text) {
-        this.text = text;
+    public UrlInfo(String url) {
+        this.url = url;
         this.createTime = LocalDateTime.now();
     }
 
@@ -31,7 +31,7 @@ public class Url {
     /**
      * url内容
      */
-    private String text;
+    private String url;
 
     /**
      * 创建时间

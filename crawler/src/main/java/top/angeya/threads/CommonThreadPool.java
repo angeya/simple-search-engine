@@ -10,6 +10,8 @@ import java.util.concurrent.*;
  */
 public class CommonThreadPool {
 
+    private CommonThreadPool(){}
+
     public static final ExecutorService EXECUTOR_SERVICE = new ThreadPoolExecutor(5, 8, 60,
             TimeUnit.SECONDS, new ArrayBlockingQueue<>(8),
             Executors.defaultThreadFactory(),

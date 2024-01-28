@@ -3,6 +3,7 @@ package top.angeya.crawler.scheduler;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import top.angeya.constant.CrawlerDataRecordType;
 import top.angeya.dao.CrawlerDataRecordMapper;
 import top.angeya.dao.UrlInfoMapper;
@@ -90,6 +91,7 @@ public class MysqlUrlScheduler implements UrlScheduler {
         return urlInfo;
     }
 
+    @Async
     @Override
     public void push(UrlInfo urlInfo) {
         // 如果url队列元素个数已经大于等于最大限制，则不再加入url
@@ -112,6 +114,14 @@ public class MysqlUrlScheduler implements UrlScheduler {
             return;
         }
         log.info("add new url [{}], queue size is {}", url, this.urlInfoQueue.size());
+    }
+
+    @Async
+    @Override
+    public void push(List<String> urlList) {
+        for (String s : urlList) {
+            this.push(new UrlInfo(s));
+        }
     }
 
     /**

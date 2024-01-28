@@ -28,10 +28,6 @@ public interface UrlScheduler {
      * 推入url
      * @param urlList 链接列表
      */
-    default void push(List<String> urlList) {
-        for (String s : urlList) {
-            this.push(new UrlInfo(s));
-        }
-    }
+    void push(List<String> urlList);
 
 }
